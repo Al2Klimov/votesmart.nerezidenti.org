@@ -9,4 +9,4 @@ RUN ["npm", "install"]
 FROM nginx:alpine
 
 COPY --from=deps /deps/node_modules/bootstrap/dist/css/bootstrap.min.css /usr/share/nginx/html/
-COPY index.html /usr/share/nginx/html/
+COPY index.html style.css bg.jpg /usr/share/nginx/html/
