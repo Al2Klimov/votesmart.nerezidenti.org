@@ -25,7 +25,7 @@ func main() {
 
 	app := iris.Default()
 
-	// TODO
+	app.Get("/v1/states", getStates)
 
 	onTerm.Lock()
 	onTerm.ToDo = append(onTerm.ToDo, func() {
