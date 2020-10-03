@@ -20,6 +20,7 @@ var onTerm struct {
 
 func main() {
 	initLogging()
+	initDb()
 	go wait4term()
 
 	app := iris.Default()
