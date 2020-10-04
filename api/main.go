@@ -12,6 +12,10 @@ import (
 	"syscall"
 )
 
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
 var onTerm struct {
 	sync.RWMutex
 
@@ -26,6 +30,7 @@ func main() {
 
 	app := iris.Default()
 
+	app.Put("/v1/states", mustBeAdmin, putStates)
 	app.Get("/v1/states", getStates)
 
 	onTerm.Lock()

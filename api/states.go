@@ -1,10 +1,51 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/kataras/iris/v12"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
+
+func putStates(ctx iris.Context) {
+	var payload struct {
+		RuName string `json:"ru_name"`
+	}
+
+	if errRJ := ctx.ReadJSON(&payload); errRJ != nil {
+		ctx.StatusCode(400)
+		ctx.JSON(errorResponse{errRJ.Error()})
+		return
+	}
+
+	if strings.TrimSpace(payload.RuName) == "" {
+		ctx.StatusCode(400)
+		ctx.JSON(errorResponse{".ru_name missing"})
+		return
+	}
+
+	uid, errNR := uuid.NewRandom()
+	if errNR != nil {
+		ctx.StatusCode(500)
+		ctx.JSON(errorResponse{errNR.Error()})
+		return
+	}
+
+	{
+		errTx := rwTx(func(tx *sql.Tx) error {
+			_, errEx := tx.Exec(`INSERT INTO state(ext_id, ru_name) VALUES ($1, $2)`, uid, payload.RuName)
+			return errEx
+		})
+		if errTx != nil {
+			ctx.StatusCode(500)
+			ctx.JSON(errorResponse{errTx.Error()})
+			return
+		}
+	}
+
+	ctx.StatusCode(204)
+}
 
 func getStates(ctx iris.Context) {
 	type row struct {
