@@ -131,3 +131,44 @@ func postStates(ctx iris.Context) {
 		ctx.JSON(errorResponse{"no such state"})
 	}
 }
+
+func deleteStates(ctx iris.Context) {
+	extId, errPU := uuid.Parse(ctx.Params().Get("ext_id"))
+	if errPU != nil {
+		ctx.StatusCode(400)
+		ctx.JSON(errorResponse{errPU.Error()})
+		return
+	}
+
+	var found bool
+
+	{
+		errTx := rwTx(func(tx *sql.Tx) error {
+			res, errEx := tx.Exec(`DELETE FROM state WHERE ext_id=$1`, extId)
+			if errEx != nil {
+				return errEx
+			}
+
+			rows, errRA := res.RowsAffected()
+			if errRA != nil {
+				return errRA
+			}
+
+			found = rows > 0
+
+			return nil
+		})
+		if errTx != nil {
+			ctx.StatusCode(500)
+			ctx.JSON(errorResponse{errTx.Error()})
+			return
+		}
+	}
+
+	if found {
+		ctx.StatusCode(204)
+	} else {
+		ctx.StatusCode(404)
+		ctx.JSON(errorResponse{"no such state"})
+	}
+}

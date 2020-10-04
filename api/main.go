@@ -33,6 +33,7 @@ func main() {
 	app.Put("/v1/states", mustBeAdmin, putStates)
 	app.Get("/v1/states", getStates)
 	app.Post("/v1/states/{ext_id:string}", mustBeAdmin, postStates)
+	app.Delete("/v1/states/{ext_id:string}", mustBeAdmin, deleteStates)
 
 	onTerm.Lock()
 	onTerm.ToDo = append(onTerm.ToDo, func() {
