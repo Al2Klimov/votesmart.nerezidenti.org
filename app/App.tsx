@@ -1,6 +1,7 @@
 import React, {Component, ReactNode} from 'react';
 
 import {
+  Button,
   SafeAreaView,
   StyleSheet,
   ScrollView,
@@ -11,8 +12,32 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-export default class App extends Component {
+export default class App extends Component<{}, {view: 'is-russian'}> {
   render(): ReactNode {
+    const sections: ReactNode[] = [];
+
+    if (this.state === null) {
+      this.setState({view: 'is-russian'});
+    } else {
+      switch (this.state.view) {
+        case 'is-russian':
+          sections.push(
+            <>
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Вы –</Text>
+                <Text style={styles.sectionDescription}>
+                  гражданин Российской Федерации?
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button title="Да" onPress={() => {}} />
+                <Text style={styles.sectionDescription} />
+                <Button title="Нет" onPress={() => {}} />
+              </View>
+            </>,
+          );
+      }
+    }
+
     return (
       <>
         <StatusBar barStyle="dark-content" />
@@ -27,6 +52,7 @@ export default class App extends Component {
                   в умное голосование для нерезидентов!
                 </Text>
               </View>
+              {sections}
             </View>
           </ScrollView>
         </SafeAreaView>
