@@ -20,6 +20,7 @@ var onTerm struct {
 
 func main() {
 	initLogging()
+	initAdmin()
 	initDb()
 	go wait4term()
 
