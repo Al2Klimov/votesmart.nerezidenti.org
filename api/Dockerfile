@@ -1,10 +1,13 @@
 FROM golang:alpine as build
 RUN ["apk", "add", "upx"]
-ADD . /api
 
+RUN ["mkdir", "/api"]
+COPY go.mod go.sum /api/
 WORKDIR /api
-ENV CGO_ENABLED 0
+RUN ["go", "mod", "download"]
 
+ADD . /api
+ENV CGO_ENABLED 0
 RUN ["go", "build", "-ldflags", "-s -w", "."]
 RUN ["upx", "api"]
 
