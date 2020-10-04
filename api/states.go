@@ -74,3 +74,60 @@ func getStates(ctx iris.Context) {
 
 	_, _ = ctx.JSON(res)
 }
+
+func postStates(ctx iris.Context) {
+	var payload struct {
+		RuName string `json:"ru_name"`
+	}
+
+	extId, errPU := uuid.Parse(ctx.Params().Get("ext_id"))
+	if errPU != nil {
+		ctx.StatusCode(400)
+		ctx.JSON(errorResponse{errPU.Error()})
+		return
+	}
+
+	if errRJ := ctx.ReadJSON(&payload); errRJ != nil {
+		ctx.StatusCode(400)
+		ctx.JSON(errorResponse{errRJ.Error()})
+		return
+	}
+
+	if strings.TrimSpace(payload.RuName) == "" {
+		ctx.StatusCode(400)
+		ctx.JSON(errorResponse{".ru_name missing"})
+		return
+	}
+
+	var found bool
+
+	{
+		errTx := rwTx(func(tx *sql.Tx) error {
+			res, errEx := tx.Exec(`UPDATE state SET ru_name=$1 WHERE ext_id=$2`, payload.RuName, extId)
+			if errEx != nil {
+				return errEx
+			}
+
+			rows, errRA := res.RowsAffected()
+			if errRA != nil {
+				return errRA
+			}
+
+			found = rows > 0
+
+			return nil
+		})
+		if errTx != nil {
+			ctx.StatusCode(500)
+			ctx.JSON(errorResponse{errTx.Error()})
+			return
+		}
+	}
+
+	if found {
+		ctx.StatusCode(204)
+	} else {
+		ctx.StatusCode(404)
+		ctx.JSON(errorResponse{"no such state"})
+	}
+}

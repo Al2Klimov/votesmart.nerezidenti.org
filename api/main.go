@@ -32,6 +32,7 @@ func main() {
 
 	app.Put("/v1/states", mustBeAdmin, putStates)
 	app.Get("/v1/states", getStates)
+	app.Post("/v1/states/{ext_id:string}", mustBeAdmin, postStates)
 
 	onTerm.Lock()
 	onTerm.ToDo = append(onTerm.ToDo, func() {
