@@ -12,7 +12,10 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-export default class App extends Component<{}, {view: 'is-russian'}> {
+export default class App extends Component<
+  {},
+  {view: 'is-russian' | 'not-russian'}
+> {
   render(): ReactNode {
     const sections: ReactNode[] = [];
 
@@ -29,9 +32,40 @@ export default class App extends Component<{}, {view: 'is-russian'}> {
                   гражданин Российской Федерации?
                 </Text>
                 <Text style={styles.sectionDescription} />
-                <Button title="Да" onPress={() => {}} />
+                <Button key="is-russian-yes" title="Да" onPress={() => {}} />
                 <Text style={styles.sectionDescription} />
-                <Button title="Нет" onPress={() => {}} />
+                <Button
+                  title="Нет"
+                  key="is-russian-no"
+                  onPress={() => {
+                    this.setState({view: 'not-russian'});
+                  }}
+                />
+              </View>
+            </>,
+          );
+          break;
+        case 'not-russian':
+          sections.push(
+            <>
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Вы –</Text>
+                <Text style={styles.sectionDescription}>
+                  не гражданин Российской Федерации.
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button
+                  key="not-russian-back"
+                  title="Назад"
+                  onPress={() => {
+                    this.setState({view: 'is-russian'});
+                  }}
+                />
+                <Text style={styles.sectionDescription} />
+                <Text style={styles.sectionDescription}>
+                  К сожалению, Вам придётся бороться с ОПГ «Единая Россия»
+                  как-то по-другому – это приложение Вам в этом не поможет.
+                </Text>
               </View>
             </>,
           );
