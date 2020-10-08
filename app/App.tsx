@@ -3,6 +3,7 @@ import React, {Component, ReactNode} from 'react';
 import {
   AsyncStorage,
   Button,
+  Linking,
   SafeAreaView,
   StyleSheet,
   ScrollView,
@@ -13,7 +14,9 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-type State = {view: 'is-russian' | 'not-russian' | 'is-resident'};
+type State = {
+  view: 'is-russian' | 'not-russian' | 'is-resident' | 'yes-resident';
+};
 
 export default class App extends Component<{}, State> {
   persistState(state: State) {
@@ -135,7 +138,49 @@ export default class App extends Component<{}, State> {
                 <Text style={styles.sectionDescription} />
                 <Button title="Да" key="is-resident-no" onPress={() => {}} />
                 <Text style={styles.sectionDescription} />
-                <Button title="Нет" key="is-resident-yes" onPress={() => {}} />
+                <Button
+                  title="Нет"
+                  key="is-resident-yes"
+                  onPress={() => {
+                    this.persistState({view: 'yes-resident'});
+                  }}
+                />
+              </View>
+            </>,
+          );
+          break;
+        case 'yes-resident':
+          const smartVote = 'https://votesmart.appspot.com';
+
+          sections.push(
+            <>
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Вы –</Text>
+                <Text style={styles.sectionDescription}>
+                  гражданин и житель Российской Федерации.
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button
+                  key="yes-resident-back"
+                  title="Назад"
+                  onPress={() => {
+                    this.persistState({view: 'is-resident'});
+                  }}
+                />
+                <Text style={styles.sectionDescription} />
+                <Text style={styles.sectionDescription}>
+                  Отлично! Чтобы бороться с ОПГ «Единая Россия», Вам даже не
+                  нужно это приложение в виде прослойки. Вы можете
+                  непосредственно участвовать в умном голосовании:
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button
+                  key="yes-resident-continue"
+                  title={smartVote}
+                  onPress={() => {
+                    Linking.openURL(smartVote);
+                  }}
+                />
               </View>
             </>,
           );
