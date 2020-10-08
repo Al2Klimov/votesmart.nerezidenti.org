@@ -1,6 +1,7 @@
 import React, {Component, ReactNode} from 'react';
 
 import {
+  AsyncStorage,
   Button,
   SafeAreaView,
   StyleSheet,
@@ -12,15 +13,49 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-export default class App extends Component<
-  {},
-  {view: 'is-russian' | 'not-russian'}
-> {
+type State = {view: 'is-russian' | 'not-russian'};
+
+export default class App extends Component<{}, State> {
+  persistState(state: State) {
+    AsyncStorage.setItem('state', JSON.stringify(state)).then(
+      () => {
+        this.setState(state);
+      },
+      (reason) => {
+        throw reason;
+      },
+    );
+  }
+
+  initState() {
+    this.persistState({view: 'is-russian'});
+  }
+
   render(): ReactNode {
     const sections: ReactNode[] = [];
 
     if (this.state === null) {
-      this.setState({view: 'is-russian'});
+      AsyncStorage.getItem('state').then(
+        (state) => {
+          if (state === null) {
+            this.initState();
+          } else {
+            let loaded: any;
+
+            try {
+              loaded = JSON.parse(state);
+            } catch (e) {
+              this.initState();
+              return;
+            }
+
+            this.setState(loaded);
+          }
+        },
+        (reason) => {
+          throw reason;
+        },
+      );
     } else {
       switch (this.state.view) {
         case 'is-russian':
@@ -38,7 +73,7 @@ export default class App extends Component<
                   title="Нет"
                   key="is-russian-no"
                   onPress={() => {
-                    this.setState({view: 'not-russian'});
+                    this.persistState({view: 'not-russian'});
                   }}
                 />
               </View>
@@ -58,7 +93,7 @@ export default class App extends Component<
                   key="not-russian-back"
                   title="Назад"
                   onPress={() => {
-                    this.setState({view: 'is-russian'});
+                    this.persistState({view: 'is-russian'});
                   }}
                 />
                 <Text style={styles.sectionDescription} />
