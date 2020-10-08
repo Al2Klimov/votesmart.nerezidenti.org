@@ -13,7 +13,7 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-type State = {view: 'is-russian' | 'not-russian'};
+type State = {view: 'is-russian' | 'not-russian' | 'is-resident'};
 
 export default class App extends Component<{}, State> {
   persistState(state: State) {
@@ -67,7 +67,13 @@ export default class App extends Component<{}, State> {
                   гражданин Российской Федерации?
                 </Text>
                 <Text style={styles.sectionDescription} />
-                <Button key="is-russian-yes" title="Да" onPress={() => {}} />
+                <Button
+                  title="Да"
+                  key="is-russian-yes"
+                  onPress={() => {
+                    this.persistState({view: 'is-resident'});
+                  }}
+                />
                 <Text style={styles.sectionDescription} />
                 <Button
                   title="Нет"
@@ -101,6 +107,35 @@ export default class App extends Component<{}, State> {
                   К сожалению, Вам придётся бороться с ОПГ «Единая Россия»
                   как-то по-другому – это приложение Вам в этом не поможет.
                 </Text>
+              </View>
+            </>,
+          );
+          break;
+        case 'is-resident':
+          sections.push(
+            <>
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Вы –</Text>
+                <Text style={styles.sectionDescription}>
+                  гражданин Российской Федерации.
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button
+                  key="is-resident-back"
+                  title="Назад"
+                  onPress={() => {
+                    this.persistState({view: 'is-russian'});
+                  }}
+                />
+                <Text style={styles.sectionDescription} />
+                <Text style={styles.sectionTitle}>Вы</Text>
+                <Text style={styles.sectionDescription}>
+                  постоянно проживаете за рубежом?
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button title="Да" key="is-resident-no" onPress={() => {}} />
+                <Text style={styles.sectionDescription} />
+                <Button title="Нет" key="is-resident-yes" onPress={() => {}} />
               </View>
             </>,
           );
