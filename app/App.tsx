@@ -1,6 +1,7 @@
 import React, {Component, ReactNode} from 'react';
 
 import {
+  ActivityIndicator,
   AsyncStorage,
   Button,
   Linking,
@@ -15,7 +16,12 @@ import {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
 type State = {
-  view: 'is-russian' | 'not-russian' | 'is-resident' | 'yes-resident';
+  view:
+    | 'is-russian'
+    | 'not-russian'
+    | 'is-resident'
+    | 'yes-resident'
+    | 'which-residence';
 };
 
 export default class App extends Component<{}, State> {
@@ -136,7 +142,13 @@ export default class App extends Component<{}, State> {
                   постоянно проживаете за рубежом?
                 </Text>
                 <Text style={styles.sectionDescription} />
-                <Button title="Да" key="is-resident-no" onPress={() => {}} />
+                <Button
+                  title="Да"
+                  key="is-resident-no"
+                  onPress={() => {
+                    this.persistState({view: 'which-residence'});
+                  }}
+                />
                 <Text style={styles.sectionDescription} />
                 <Button
                   title="Нет"
@@ -181,6 +193,34 @@ export default class App extends Component<{}, State> {
                     Linking.openURL(smartVote);
                   }}
                 />
+              </View>
+            </>,
+          );
+          break;
+        case 'which-residence':
+          sections.push(
+            <>
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Вы –</Text>
+                <Text style={styles.sectionDescription}>
+                  гражданин Российской Федерации, постоянно проживающий за
+                  рубежом.
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button
+                  key="which-residence-back"
+                  title="Назад"
+                  onPress={() => {
+                    this.persistState({view: 'is-resident'});
+                  }}
+                />
+                <Text style={styles.sectionDescription} />
+                <Text style={styles.sectionTitle}>Выберите</Text>
+                <Text style={styles.sectionDescription}>
+                  Ваше место жительства:
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <ActivityIndicator size="large" color={Colors.black} />
               </View>
             </>,
           );
