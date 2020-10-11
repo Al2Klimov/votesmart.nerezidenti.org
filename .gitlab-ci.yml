@@ -1,0 +1,17 @@
+image: docker
+services:
+- docker:18-dind
+
+votesmart.nerezidenti.org:
+  script:
+  - |
+    set -exo pipefail
+    cd website
+    docker build --pull .
+
+voteapi.nerezidenti.org:
+  script:
+  - |
+    set -exo pipefail
+    cd api
+    docker build --pull .
