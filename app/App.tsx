@@ -24,10 +24,23 @@ type State = {
     | 'which-residence';
 };
 
+type Country = {
+  id: string;
+  name: string;
+};
+
+const baseUrl = 'https://teremok.nerezidenti.org';
+
 export default class App extends Component<{}, State> {
+  loading: 'not-yet' | 'yes' | 'error' | 'success' = 'not-yet';
+  lastError: any;
+  states: Country[] | undefined;
+
   persistState(state: State) {
     AsyncStorage.setItem('state', JSON.stringify(state)).then(
       () => {
+        this.loading = 'not-yet';
+        this.lastError = undefined;
         this.setState(state);
       },
       (reason) => {
@@ -198,6 +211,50 @@ export default class App extends Component<{}, State> {
           );
           break;
         case 'which-residence':
+          if (this.states === undefined && this.loading === 'not-yet') {
+            this.loading = 'yes';
+
+            (async () => {
+              const resp = await fetch(baseUrl + '/v1/states');
+
+              if (resp.status !== 200) {
+                throw resp.status;
+              }
+
+              const jsn = await resp.json();
+              const states: Country[] = [];
+
+              for (const id in jsn) {
+                states.push({id: '' + id, name: '' + jsn[id]});
+              }
+
+              return states.sort((a, b) => a.name.localeCompare(b.name));
+            })().then(
+              (states) => {
+                if (
+                  this.state.view === 'which-residence' &&
+                  this.states === undefined &&
+                  this.loading === 'yes'
+                ) {
+                  this.loading = 'success';
+                  this.states = states;
+                  this.forceUpdate();
+                }
+              },
+              (reason) => {
+                if (
+                  this.state.view === 'which-residence' &&
+                  this.states === undefined &&
+                  this.loading === 'yes'
+                ) {
+                  this.loading = 'error';
+                  this.lastError = reason;
+                  this.forceUpdate();
+                }
+              },
+            );
+          }
+
           sections.push(
             <>
               <View style={styles.sectionContainer}>
@@ -219,12 +276,48 @@ export default class App extends Component<{}, State> {
                 <Text style={styles.sectionDescription}>
                   Ваше место жительства:
                 </Text>
-                <Text style={styles.sectionDescription} />
-                <ActivityIndicator size="large" color={Colors.black} />
+                {this.states === undefined ? (
+                  <>
+                    <Text style={styles.sectionDescription} />
+                    <ActivityIndicator size="large" color={Colors.black} />
+                  </>
+                ) : (
+                  this.states.map((state) => (
+                    <>
+                      <Text style={styles.sectionDescription} />
+                      <Button
+                        key={'which-residence-state-' + state.id}
+                        title={state.name}
+                        onPress={() => {}}
+                      />
+                    </>
+                  ))
+                )}
               </View>
             </>,
           );
       }
+    }
+
+    if (this.lastError !== undefined) {
+      sections.push(
+        <>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Ошибка</Text>
+            <Text style={styles.sectionDescription}>{'' + this.lastError}</Text>
+            <Text style={styles.sectionDescription} />
+            <Button
+              key="retry"
+              title="Попробовать ещё раз"
+              onPress={() => {
+                this.loading = 'not-yet';
+                this.lastError = undefined;
+                this.forceUpdate();
+              }}
+            />
+          </View>
+        </>,
+      );
     }
 
     return (
