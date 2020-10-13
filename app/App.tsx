@@ -21,7 +21,9 @@ type State = {
     | 'not-russian'
     | 'is-resident'
     | 'yes-resident'
-    | 'which-residence';
+    | 'which-residence'
+    | 'which-office';
+  residence?: Country;
 };
 
 type Country = {
@@ -288,11 +290,46 @@ export default class App extends Component<{}, State> {
                       <Button
                         key={'which-residence-state-' + state.id}
                         title={state.name}
-                        onPress={() => {}}
+                        onPress={() => {
+                          this.persistState({
+                            view: 'which-office',
+                            residence: state,
+                          });
+                        }}
                       />
                     </>
                   ))
                 )}
+              </View>
+            </>,
+          );
+          break;
+        case 'which-office':
+          sections.push(
+            <>
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Вы –</Text>
+                <Text style={styles.sectionDescription}>
+                  гражданин Российской Федерации.
+                </Text>
+                <Text style={styles.sectionDescription}>
+                  Ваше место жительства: {this.state.residence?.name}
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <Button
+                  key="which-office-back"
+                  title="Назад"
+                  onPress={() => {
+                    this.persistState({view: 'which-residence'});
+                  }}
+                />
+                <Text style={styles.sectionDescription} />
+                <Text style={styles.sectionTitle}>Выберите</Text>
+                <Text style={styles.sectionDescription}>
+                  консульское учреждение:
+                </Text>
+                <Text style={styles.sectionDescription} />
+                <ActivityIndicator size="large" color={Colors.black} />
               </View>
             </>,
           );
