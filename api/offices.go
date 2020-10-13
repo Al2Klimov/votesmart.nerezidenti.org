@@ -35,11 +35,6 @@ func putOffices(ctx iris.Context) {
 		return
 	}
 
-	if !ensureSchema() {
-		ctx.StatusCode(500)
-		return
-	}
-
 	uid, errNR := uuid.NewRandom()
 	if errNR != nil {
 		ctx.StatusCode(500)
@@ -95,11 +90,6 @@ func getOffices(ctx iris.Context) {
 	if errPU != nil {
 		ctx.StatusCode(400)
 		ctx.JSON(errorResponse{errPU.Error()})
-		return
-	}
-
-	if !ensureSchema() {
-		ctx.StatusCode(500)
 		return
 	}
 
@@ -173,11 +163,6 @@ func postOffices(ctx iris.Context) {
 		return
 	}
 
-	if !ensureSchema() {
-		ctx.StatusCode(500)
-		return
-	}
-
 	var found bool
 
 	{
@@ -216,11 +201,6 @@ func deleteOffices(ctx iris.Context) {
 	if errPU != nil {
 		ctx.StatusCode(400)
 		ctx.JSON(errorResponse{errPU.Error()})
-		return
-	}
-
-	if !ensureSchema() {
-		ctx.StatusCode(500)
 		return
 	}
 

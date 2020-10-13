@@ -30,14 +30,14 @@ func main() {
 
 	app := iris.Default()
 
-	app.Put("/v1/states", mustBeAdmin, putStates)
-	app.Get("/v1/states", getStates)
-	app.Post("/v1/states/{ext_id:string}", mustBeAdmin, postStates)
-	app.Delete("/v1/states/{ext_id:string}", mustBeAdmin, deleteStates)
-	app.Put("/v1/states/{ext_id:string}/offices", mustBeAdmin, putOffices)
-	app.Get("/v1/states/{ext_id:string}/offices", getOffices)
-	app.Post("/v1/offices/{ext_id:string}", mustBeAdmin, postOffices)
-	app.Delete("/v1/offices/{ext_id:string}", mustBeAdmin, deleteOffices)
+	app.Put("/v1/states", mustBeAdmin, ensureSchema, putStates)
+	app.Get("/v1/states", ensureSchema, getStates)
+	app.Post("/v1/states/{ext_id:string}", mustBeAdmin, ensureSchema, postStates)
+	app.Delete("/v1/states/{ext_id:string}", mustBeAdmin, ensureSchema, deleteStates)
+	app.Put("/v1/states/{ext_id:string}/offices", mustBeAdmin, ensureSchema, putOffices)
+	app.Get("/v1/states/{ext_id:string}/offices", ensureSchema, getOffices)
+	app.Post("/v1/offices/{ext_id:string}", mustBeAdmin, ensureSchema, postOffices)
+	app.Delete("/v1/offices/{ext_id:string}", mustBeAdmin, ensureSchema, deleteOffices)
 
 	onTerm.Lock()
 	onTerm.ToDo = append(onTerm.ToDo, func() {

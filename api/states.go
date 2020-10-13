@@ -53,11 +53,6 @@ func getStates(ctx iris.Context) {
 		RuName string
 	}
 
-	if !ensureSchema() {
-		ctx.StatusCode(500)
-		return
-	}
-
 	rawRows, errFA := fetchAll(db, row{}, "SELECT ext_id, ru_name FROM state")
 	if errFA != nil {
 		log.WithFields(log.Fields{"error": errFA.Error()}).Error("Query error")

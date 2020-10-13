@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"github.com/kataras/iris/v12"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
@@ -40,7 +41,7 @@ func initDb() {
 	})
 }
 
-func ensureSchema() bool {
+func ensureSchema(ctx iris.Context) {
 	if atomic.LoadUint32(&schemaImport.done) == 0 {
 		schemaImport.Lock()
 		defer schemaImport.Unlock()
@@ -48,14 +49,15 @@ func ensureSchema() bool {
 		if atomic.LoadUint32(&schemaImport.done) == 0 {
 			if errIS := doTx(false, importSchema); errIS != nil {
 				log.WithFields(log.Fields{"error": errIS.Error()}).Error("Couldn't create database schema")
-				return false
+				ctx.StatusCode(500)
+				return
 			}
 
 			atomic.StoreUint32(&schemaImport.done, 1)
 		}
 	}
 
-	return true
+	ctx.Next()
 }
 
 func importSchema(tx *sql.Tx) error {
