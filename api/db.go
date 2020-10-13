@@ -46,7 +46,7 @@ func ensureSchema() bool {
 		defer schemaImport.Unlock()
 
 		if atomic.LoadUint32(&schemaImport.done) == 0 {
-			if errIS := rwTx(importSchema); errIS != nil {
+			if errIS := doTx(false, importSchema); errIS != nil {
 				log.WithFields(log.Fields{"error": errIS.Error()}).Error("Couldn't create database schema")
 				return false
 			}
@@ -59,17 +59,29 @@ func ensureSchema() bool {
 }
 
 func importSchema(tx *sql.Tx) error {
-	_, errEx := tx.Exec(`CREATE TABLE IF NOT EXISTS state (
+	{
+		_, errEx := tx.Exec(`CREATE TABLE IF NOT EXISTS state (
 	int_id  SMALLSERIAL PRIMARY KEY,
 	ext_id  UUID NOT NULL UNIQUE,
+	ru_name VARCHAR(255) NOT NULL
+)`)
+		if errEx != nil {
+			return errEx
+		}
+	}
+
+	_, errEx := tx.Exec(`CREATE TABLE IF NOT EXISTS office (
+	int_id  SERIAL PRIMARY KEY,
+	ext_id  UUID NOT NULL UNIQUE,
+	state   SMALLINT NOT NULL REFERENCES state(int_id),
 	ru_name VARCHAR(255) NOT NULL
 )`)
 	return errEx
 }
 
-func rwTx(f func(tx *sql.Tx) error) error {
+func doTx(ro bool, f func(tx *sql.Tx) error) error {
 	for {
-		tx, errBg := db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelSerializable})
+		tx, errBg := db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelSerializable, ReadOnly: ro})
 		if errBg != nil {
 			return errBg
 		}

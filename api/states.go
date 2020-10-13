@@ -33,7 +33,7 @@ func putStates(ctx iris.Context) {
 	}
 
 	{
-		errTx := rwTx(func(tx *sql.Tx) error {
+		errTx := doTx(false, func(tx *sql.Tx) error {
 			_, errEx := tx.Exec(`INSERT INTO state(ext_id, ru_name) VALUES ($1, $2)`, uid, payload.RuName)
 			return errEx
 		})
@@ -102,7 +102,7 @@ func postStates(ctx iris.Context) {
 	var found bool
 
 	{
-		errTx := rwTx(func(tx *sql.Tx) error {
+		errTx := doTx(false, func(tx *sql.Tx) error {
 			res, errEx := tx.Exec(`UPDATE state SET ru_name=$1 WHERE ext_id=$2`, payload.RuName, extId)
 			if errEx != nil {
 				return errEx
@@ -143,7 +143,7 @@ func deleteStates(ctx iris.Context) {
 	var found bool
 
 	{
-		errTx := rwTx(func(tx *sql.Tx) error {
+		errTx := doTx(false, func(tx *sql.Tx) error {
 			res, errEx := tx.Exec(`DELETE FROM state WHERE ext_id=$1`, extId)
 			if errEx != nil {
 				return errEx
