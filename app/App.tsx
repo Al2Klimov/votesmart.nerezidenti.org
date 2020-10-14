@@ -23,32 +23,43 @@ type State = {
     | 'yes-resident'
     | 'which-residence'
     | 'which-office';
-  residence?: Country;
+  residence?: Subject;
 };
 
-type Country = {
+type Subject = {
   id: string;
   name: string;
 };
 
 const baseUrl = 'https://teremok.nerezidenti.org';
 
+function compareSubjects(lhs: Subject, rhs: Subject): number {
+  return (
+    lhs.name.toLocaleLowerCase().localeCompare(rhs.name.toLocaleLowerCase()) ||
+    lhs.name.localeCompare(rhs.name)
+  );
+}
+
 export default class App extends Component<{}, State> {
   loading: 'not-yet' | 'yes' | 'error' | 'success' = 'not-yet';
   lastError: any;
-  states: Country[] | undefined;
+  states: Subject[] | undefined;
+  offices: Subject[] | undefined;
 
-  persistState(state: State) {
-    AsyncStorage.setItem('state', JSON.stringify(state)).then(
-      () => {
-        this.loading = 'not-yet';
-        this.lastError = undefined;
-        this.setState(state);
-      },
-      (reason) => {
-        throw reason;
-      },
-    );
+  persistState(state: State): Promise<void> {
+    return new Promise((resolve) => {
+      AsyncStorage.setItem('state', JSON.stringify(state)).then(
+        () => {
+          this.loading = 'not-yet';
+          this.lastError = undefined;
+          this.setState(state, resolve);
+        },
+        (reason) => {
+          resolve();
+          throw reason;
+        },
+      );
+    });
   }
 
   initState() {
@@ -224,13 +235,13 @@ export default class App extends Component<{}, State> {
               }
 
               const jsn = await resp.json();
-              const states: Country[] = [];
+              const states: Subject[] = [];
 
               for (const id in jsn) {
                 states.push({id: '' + id, name: '' + jsn[id]});
               }
 
-              return states.sort((a, b) => a.name.localeCompare(b.name));
+              return states.sort(compareSubjects);
             })().then(
               (states) => {
                 if (
@@ -305,6 +316,64 @@ export default class App extends Component<{}, State> {
           );
           break;
         case 'which-office':
+          if (this.offices === undefined && this.loading === 'not-yet') {
+            this.loading = 'yes';
+
+            (async () => {
+              const resp = await fetch(
+                baseUrl + '/v1/states/' + this.state.residence?.id + '/offices',
+              );
+
+              switch (resp.status) {
+                case 200:
+                  break;
+                case 404:
+                  if (
+                    this.state.view === 'which-office' &&
+                    this.offices === undefined &&
+                    this.loading === 'yes'
+                  ) {
+                    this.states = undefined;
+                    await this.persistState({view: 'which-residence'});
+                  }
+                default:
+                  throw resp.status;
+              }
+
+              const jsn = await resp.json();
+              const offices: Subject[] = [];
+
+              for (const id in jsn) {
+                offices.push({id: '' + id, name: '' + jsn[id]});
+              }
+
+              return offices.sort(compareSubjects);
+            })().then(
+              (offices) => {
+                if (
+                  this.state.view === 'which-office' &&
+                  this.offices === undefined &&
+                  this.loading === 'yes'
+                ) {
+                  this.loading = 'success';
+                  this.offices = offices;
+                  this.forceUpdate();
+                }
+              },
+              (reason) => {
+                if (
+                  this.state.view === 'which-office' &&
+                  this.offices === undefined &&
+                  this.loading === 'yes'
+                ) {
+                  this.loading = 'error';
+                  this.lastError = reason;
+                  this.forceUpdate();
+                }
+              },
+            );
+          }
+
           sections.push(
             <>
               <View style={styles.sectionContainer}>
@@ -328,8 +397,23 @@ export default class App extends Component<{}, State> {
                 <Text style={styles.sectionDescription}>
                   консульское учреждение:
                 </Text>
-                <Text style={styles.sectionDescription} />
-                <ActivityIndicator size="large" color={Colors.black} />
+                {this.offices === undefined ? (
+                  <>
+                    <Text style={styles.sectionDescription} />
+                    <ActivityIndicator size="large" color={Colors.black} />
+                  </>
+                ) : (
+                  this.offices.map((office) => (
+                    <>
+                      <Text style={styles.sectionDescription} />
+                      <Button
+                        key={'which-office-office-' + office.id}
+                        title={office.name}
+                        onPress={() => {}}
+                      />
+                    </>
+                  ))
+                )}
               </View>
             </>,
           );
