@@ -8,11 +8,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/google/uuid"
+	ls "github.com/schollz/closestmatch/levenshtein"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -115,20 +117,66 @@ func main() {
 	if !*force {
 		fmt.Fprintf(os.Stderr, "Would have created %d states\n\n", len(states))
 
-		buf := bufio.NewWriter(os.Stdout)
+		uniqStr := make(map[string]struct{}, len(states))
 
-		for state, offices := range states {
-			buf.Write([]byte("- state: "))
-			json.NewEncoder(buf).Encode(state)
-			buf.Write([]byte("  offices:\n"))
+		{
+			buf := bufio.NewWriter(os.Stdout)
 
-			for office := range offices {
-				buf.Write([]byte("  - "))
-				json.NewEncoder(buf).Encode(office)
+			for state, offices := range states {
+				uniqStr[state] = struct{}{}
+
+				buf.Write([]byte("- state: "))
+				json.NewEncoder(buf).Encode(state)
+				buf.Write([]byte("  offices:\n"))
+
+				for office := range offices {
+					uniqStr[office] = struct{}{}
+
+					buf.Write([]byte("  - "))
+					json.NewEncoder(buf).Encode(office)
+				}
 			}
+
+			buf.Flush()
 		}
 
-		buf.Flush()
+		if len(uniqStr) > 1 {
+			type distance struct {
+				lhs, rhs string
+				distance int
+			}
+
+			var distances []distance
+
+			{
+				compares := map[[2]string]struct{}{}
+
+				for a := range uniqStr {
+					for b := range uniqStr {
+						if b != a {
+							if _, ok := compares[[2]string{a, b}]; !ok {
+								if d := ls.LevenshteinDistance(&a, &b); d <= 5 {
+									distances = append(distances, distance{a, b, d})
+								}
+
+								compares[[2]string{a, b}] = struct{}{}
+								compares[[2]string{b, a}] = struct{}{}
+							}
+						}
+					}
+				}
+			}
+
+			sort.Slice(distances, func(i, j int) bool {
+				return distances[i].distance < distances[j].distance
+			})
+
+			fmt.Fprintln(os.Stderr, "\nLevenshtein distance:\n")
+
+			for _, d := range distances {
+				fmt.Fprintf(os.Stderr, "%d  %#v vs. %#v\n", d.distance, d.lhs, d.rhs)
+			}
+		}
 		return
 	}
 
