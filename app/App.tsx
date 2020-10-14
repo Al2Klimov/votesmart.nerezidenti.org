@@ -43,6 +43,7 @@ function compareSubjects(lhs: Subject, rhs: Subject): number {
 export default class App extends Component<{}, State> {
   loading: 'not-yet' | 'yes' | 'error' | 'success' = 'not-yet';
   lastError: any;
+  scrollView: ScrollView | null = null;
   states: Subject[] | undefined;
   offices: Subject[] | undefined;
 
@@ -52,7 +53,13 @@ export default class App extends Component<{}, State> {
         () => {
           this.loading = 'not-yet';
           this.lastError = undefined;
-          this.setState(state, resolve);
+          this.setState(state, () => {
+            if (this.scrollView !== null) {
+              this.scrollView.scrollTo(0, 0);
+            }
+
+            resolve();
+          });
         },
         (reason) => {
           resolve();
@@ -446,6 +453,9 @@ export default class App extends Component<{}, State> {
         <StatusBar barStyle="dark-content" />
         <SafeAreaView>
           <ScrollView
+            ref={(ref) => {
+              this.scrollView = ref;
+            }}
             contentInsetAdjustmentBehavior="automatic"
             style={styles.scrollView}>
             <View style={styles.body}>
