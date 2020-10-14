@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -38,6 +40,8 @@ func (cr closableReader) Read(p []byte) (int, error) {
 func (cr closableReader) Close() error {
 	return nil
 }
+
+var pollingStation = regexp.MustCompile(`(?m)\s*\(.*?\)\s*\z`)
 
 func main() {
 	cikCsv := flag.String("data", "", "FILE")
@@ -80,7 +84,7 @@ func main() {
 	}
 
 	reader := csv.NewReader(bufio.NewReader(data))
-	states := map[string]struct{}{}
+	states := map[string]map[string]struct{}{}
 
 	for {
 		row, errRd := reader.Read()
@@ -94,7 +98,15 @@ func main() {
 		}
 
 		if len(row) > 3 {
-			states[strings.TrimSpace(row[3])] = struct{}{}
+			state := strings.TrimSpace(row[3])
+			offices, ok := states[state]
+
+			if !ok {
+				offices = map[string]struct{}{}
+				states[state] = offices
+			}
+
+			offices[strings.TrimSpace(pollingStation.ReplaceAllLiteralString(row[4], ""))] = struct{}{}
 		}
 	}
 
@@ -105,9 +117,15 @@ func main() {
 
 		buf := bufio.NewWriter(os.Stdout)
 
-		for state := range states {
-			buf.Write([]byte("- "))
+		for state, offices := range states {
+			buf.Write([]byte("- state: "))
 			json.NewEncoder(buf).Encode(state)
+			buf.Write([]byte("  offices:\n"))
+
+			for office := range offices {
+				buf.Write([]byte("  - "))
+				json.NewEncoder(buf).Encode(office)
+			}
 		}
 
 		buf.Flush()
@@ -117,10 +135,9 @@ func main() {
 	client := http.Client{Transport: httpLogger{http.DefaultTransport}}
 	req := http.Request{Method: "PUT", URL: baseUrl, Header: http.Header{}}
 
-	baseUrl.Path = "/v1/states"
 	req.SetBasicAuth(*user, pass)
 
-	for state := range states {
+	for state, offices := range states {
 		buf := &bytes.Buffer{}
 
 		{
@@ -133,6 +150,7 @@ func main() {
 			}
 		}
 
+		baseUrl.Path = "/v1/states"
 		req.Body = closableReader{buf}
 
 		resp, errDR := client.Do(&req)
@@ -141,11 +159,53 @@ func main() {
 			os.Exit(1)
 		}
 
-		_ = resp.Body.Close()
-
-		if resp.StatusCode != 204 {
+		if resp.StatusCode != 201 {
 			fmt.Fprintf(os.Stderr, "HTTP %d\n", resp.StatusCode)
 			os.Exit(1)
+		}
+
+		{
+			var rb struct {
+				Id uuid.UUID `json:"id"`
+			}
+
+			if errDc := json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&rb); errDc != nil {
+				fmt.Fprintln(os.Stderr, errDc.Error())
+				os.Exit(1)
+			}
+
+			baseUrl.Path = "/v1/states/" + rb.Id.String() + "/offices"
+		}
+
+		resp.Body.Close()
+
+		for office := range offices {
+			buf := &bytes.Buffer{}
+
+			{
+				errEc := json.NewEncoder(buf).Encode(struct {
+					RuName string `json:"ru_name"`
+				}{office})
+				if errEc != nil {
+					fmt.Fprintln(os.Stderr, errEc.Error())
+					os.Exit(1)
+				}
+			}
+
+			req.Body = closableReader{buf}
+
+			resp, errDR := client.Do(&req)
+			if errDR != nil {
+				fmt.Fprintln(os.Stderr, errDR.Error())
+				os.Exit(1)
+			}
+
+			if resp.StatusCode != 204 {
+				fmt.Fprintf(os.Stderr, "HTTP %d\n", resp.StatusCode)
+				os.Exit(1)
+			}
+
+			resp.Body.Close()
 		}
 	}
 }
