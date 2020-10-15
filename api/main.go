@@ -38,6 +38,10 @@ func main() {
 	app.Get("/v1/states/{ext_id:string}/offices", ensureSchema, getOffices)
 	app.Post("/v1/offices/{ext_id:string}", mustBeAdmin, ensureSchema, postOffices)
 	app.Delete("/v1/offices/{ext_id:string}", mustBeAdmin, ensureSchema, deleteOffices)
+	app.Put("/v1/districts", mustBeAdmin, ensureSchema, putDistricts)
+	app.Get("/v1/districts", ensureSchema, getDistricts)
+	app.Post("/v1/districts/{ext_id:string}", mustBeAdmin, ensureSchema, postDistricts)
+	app.Delete("/v1/districts/{ext_id:string}", mustBeAdmin, ensureSchema, deleteDistricts)
 
 	onTerm.Lock()
 	onTerm.ToDo = append(onTerm.ToDo, func() {
