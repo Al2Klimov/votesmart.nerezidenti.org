@@ -44,6 +44,7 @@ func (cr closableReader) Close() error {
 }
 
 var pollingStation = regexp.MustCompile(`(?m)\s*\(.*?\)\s*\z`)
+var electDistrict = regexp.MustCompile(`(?m)\A\S.+?\d+.+?|\s+одномандатный\s+избирательный\s+округ\s*\z`)
 
 func main() {
 	cikCsv := flag.String("data", "", "FILE")
@@ -87,6 +88,7 @@ func main() {
 
 	reader := csv.NewReader(bufio.NewReader(data))
 	states := map[string]map[string]struct{}{}
+	districts := map[string]struct{}{}
 
 	for {
 		row, errRd := reader.Read()
@@ -109,18 +111,21 @@ func main() {
 			}
 
 			offices[strings.TrimSpace(pollingStation.ReplaceAllLiteralString(row[4], ""))] = struct{}{}
+			districts[electDistrict.ReplaceAllLiteralString(strings.TrimSpace(row[1]), "")] = struct{}{}
 		}
 	}
 
 	_ = data.Close()
+	delete(districts, "")
 
 	if !*force {
-		fmt.Fprintf(os.Stderr, "Would have created %d states\n\n", len(states))
+		fmt.Fprintf(os.Stderr, "Would have created %d states and %d districts\n\n", len(states), len(districts))
 
 		uniqStr := make(map[string]struct{}, len(states))
 
 		{
 			buf := bufio.NewWriter(os.Stdout)
+			buf.Write([]byte("states:\n"))
 
 			for state, offices := range states {
 				uniqStr[state] = struct{}{}
@@ -135,6 +140,15 @@ func main() {
 					buf.Write([]byte("  - "))
 					json.NewEncoder(buf).Encode(office)
 				}
+			}
+
+			buf.Write([]byte("districts:\n"))
+
+			for district := range districts {
+				uniqStr[district] = struct{}{}
+
+				buf.Write([]byte("- "))
+				json.NewEncoder(buf).Encode(district)
 			}
 
 			buf.Flush()
@@ -255,5 +269,35 @@ func main() {
 
 			resp.Body.Close()
 		}
+	}
+
+	baseUrl.Path = "/v1/districts"
+	for district := range districts {
+		buf := &bytes.Buffer{}
+
+		{
+			errEc := json.NewEncoder(buf).Encode(struct {
+				RuName string `json:"ru_name"`
+			}{district})
+			if errEc != nil {
+				fmt.Fprintln(os.Stderr, errEc.Error())
+				os.Exit(1)
+			}
+		}
+
+		req.Body = closableReader{buf}
+
+		resp, errDR := client.Do(&req)
+		if errDR != nil {
+			fmt.Fprintln(os.Stderr, errDR.Error())
+			os.Exit(1)
+		}
+
+		if resp.StatusCode != 204 {
+			fmt.Fprintf(os.Stderr, "HTTP %d\n", resp.StatusCode)
+			os.Exit(1)
+		}
+
+		resp.Body.Close()
 	}
 }
