@@ -44,7 +44,10 @@ func putDistricts(ctx iris.Context) {
 		}
 	}
 
-	ctx.StatusCode(204)
+	ctx.StatusCode(201)
+	ctx.JSON(struct {
+		Id uuid.UUID `json:"id"`
+	}{uid})
 }
 
 func getDistricts(ctx iris.Context) {
