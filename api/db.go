@@ -84,10 +84,23 @@ func importSchema(tx *sql.Tx) error {
 		}
 	}
 
-	_, errEx := tx.Exec(`CREATE TABLE IF NOT EXISTS district (
+	{
+		_, errEx := tx.Exec(`CREATE TABLE IF NOT EXISTS district (
 	int_id  SMALLSERIAL PRIMARY KEY,
 	ext_id  UUID NOT NULL UNIQUE,
 	ru_name VARCHAR(255) NOT NULL
+)`)
+		if errEx != nil {
+			return errEx
+		}
+	}
+
+	_, errEx := tx.Exec(`CREATE TABLE IF NOT EXISTS station (
+	int_id   BIGSERIAL PRIMARY KEY,
+	ext_id   UUID NOT NULL UNIQUE,
+	office   INT NOT NULL REFERENCES office(int_id),
+	district SMALLINT NOT NULL REFERENCES district(int_id),
+	ru_name  VARCHAR(255) NOT NULL
 )`)
 	return errEx
 }
