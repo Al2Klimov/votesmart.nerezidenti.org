@@ -69,7 +69,10 @@ func putOffices(ctx iris.Context) {
 	}
 
 	if found {
-		ctx.StatusCode(204)
+		ctx.StatusCode(201)
+		ctx.JSON(struct {
+			Id uuid.UUID `json:"id"`
+		}{uid})
 	} else {
 		ctx.StatusCode(404)
 		ctx.JSON(errorResponse{"no such state"})
