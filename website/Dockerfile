@@ -12,10 +12,19 @@ WORKDIR /deps
 RUN ["npm", "install"]
 
 
+FROM alpine as index
+
+RUN ["apk", "add", "perl"]
+COPY index.html /
+RUN ["perl", "-p0i", "-e", "s/<!--\\s*-->//g", "index.html"]
+RUN ["perl", "-pi", "-e", "s/^\\s+//", "index.html"]
+
+
 FROM nginx:alpine
 
 COPY --from=deps /deps/node_modules/bootstrap/dist/css/bootstrap.min.css /usr/share/nginx/html/
 COPY --from=snow /Snowstorm/snowstorm-min.js /usr/share/nginx/html/
+COPY --from=index /index.html /usr/share/nginx/html/
 
 COPY nginx.conf /etc/nginx/conf.d/
-COPY index.html style.css favicon.jpg bg.jpg script.js robots.txt /usr/share/nginx/html/
+COPY style.css favicon.jpg bg.jpg script.js robots.txt /usr/share/nginx/html/
