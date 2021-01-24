@@ -27,4 +27,4 @@ COPY --from=snow /Snowstorm/snowstorm-min.js /usr/share/nginx/html/
 COPY --from=index /index.html /usr/share/nginx/html/
 
 COPY nginx.conf /etc/nginx/conf.d/
-COPY style.css favicon.jpg bg.jpg script.js robots.txt /usr/share/nginx/html/
+COPY style.css favicon.jpg bg.jpg klimov.jpg script.js robots.txt /usr/share/nginx/html/

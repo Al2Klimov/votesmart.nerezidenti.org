@@ -8,3 +8,8 @@ body {
 #content {
     background-color: #f7f7f77f;
 }
+
+img[src="klimov.jpg"] {
+    display: inline;
+    width: 50%;
+}
