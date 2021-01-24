@@ -9,6 +9,10 @@ body {
     background-color: #f7f7f77f;
 }
 
+:target {
+    background-color: #ffff00;
+}
+
 img[src="klimov.jpg"] {
     display: inline;
     width: 50%;
