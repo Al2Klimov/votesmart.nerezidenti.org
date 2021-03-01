@@ -12,8 +12,3 @@ body {
 :target {
     background-color: #ffff00;
 }
-
-img[src="klimov.jpg"] {
-    display: inline;
-    width: 50%;
-}
